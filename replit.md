@@ -33,13 +33,13 @@ An Android companion app intended to connect to a Canon EOS 6D, trigger captures
 
 ## Product
 
-- Android companion for Canon EOS 6D wireless control.
+- Android companion for Canon EOS 6D control, including USB connectivity.
 - Future PWA bridge for capture requests and returning captured images.
 - The current build provides the app shell and connection guidance; camera control and the local PWA endpoint are not implemented yet.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- The user wants to connect the Android device to the camera via USB; do not scope camera connectivity to Wi-Fi only.
 
 ## Gotchas
 
