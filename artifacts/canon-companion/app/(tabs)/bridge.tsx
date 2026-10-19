@@ -154,7 +154,7 @@ export default function BridgeScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  content: { paddingHorizontal: 22, paddingBottom: 30 },
+  content: { paddingHorizontal: 22, paddingBottom: 110 },
   headingRow: { flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 26 },
   brandMark: {
     width: 44,

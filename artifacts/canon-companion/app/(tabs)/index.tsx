@@ -194,7 +194,6 @@ export default function CameraScreen() {
               </Text>
             </View>
           </View>
-          <Feather name="more-horizontal" size={23} color={colors.mutedForeground} />
         </View>
 
         <View style={styles.sectionHeading}>
@@ -297,7 +296,7 @@ export default function CameraScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  content: { paddingHorizontal: 22, paddingBottom: 28 },
+  content: { paddingHorizontal: 22, paddingBottom: 110 },
   topline: {
     flexDirection: 'row',
     alignItems: 'center',
