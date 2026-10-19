@@ -58,6 +58,32 @@ host feature, copies the maintained Java sources into the generated project, and
 registers `CanonUsbPackage`. Do not edit generated Java copies in `android/`.
 No native dependency is added to Expo Go and no camera image is cloud-uploaded.
 
+### Self-contained test APK
+
+From the workspace root, with `JAVA_HOME` set to a suitable JDK and
+`ANDROID_SDK_ROOT` set to the Android SDK installation:
+
+```sh
+pnpm --filter @workspace/canon-companion run build:apk
+```
+
+This regenerates Android from the maintained sources and runs
+`:app:assembleRelease`. The default test build includes ARM64 and ARMv7 and
+embeds JavaScript/Hermes assets, so it does not need Metro or Expo Go. It copies
+the result to `generated-artifacts/apk/canon-companion-usb-test.apk`, which is
+excluded from Git and deployment output.
+
+The generated template uses its standard development signing key for this
+sideload test release, **not production signing**. Do not place unbacked-up
+signing keys in the generated `android/` directory. See `INSTALL-APK.md` for
+installation, camera setup and warnings about app-private photos.
+
+No APK is currently available: the local full-build attempt reached native
+compilation but was blocked by the workspace's storage quota. A normal `df`
+report did not reveal that limit. Its temporary SDK and Gradle caches were
+removed afterward. Use a build machine with enough space for the SDK, native
+toolchain, downloaded dependencies and compilation intermediates.
+
 ## Verification
 
 With a JDK on PATH, from the mobile package:
