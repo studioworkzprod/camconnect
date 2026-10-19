@@ -1,6 +1,6 @@
 # Canon DSLR Companion
 
-An Android companion app intended to connect to a Canon EOS 6D, trigger captures, and pass images to nearby PWAs.
+An Android companion app for Canon EOS 6D USB capture, with a future bridge to pass images to nearby PWAs.
 
 ## Run & Operate
 
@@ -9,6 +9,7 @@ An Android companion app intended to connect to a Canon EOS 6D, trigger captures
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/canon-companion run test:usb:protocol` — Java USB framing/driver tests (requires a JDK on PATH)
 - Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
@@ -23,27 +24,32 @@ An Android companion app intended to connect to a Canon EOS 6D, trigger captures
 ## Where things live
 
 - `artifacts/canon-companion` — Expo Android companion app.
+- `artifacts/canon-companion/native/README.md` — native Android build instructions, camera setup and verification limits.
 - `artifacts/api-server` — shared API server; no server-side functionality is required for the initial device-focused app.
 
 ## Architecture decisions
 
 - Keep camera transports model-specific so future camera bodies can be added without changing the PWA-facing contract.
-- The EOS 6D is a legacy Wi-Fi remote-control target; do not report a connected or captured state without a real camera transport.
+- The EOS 6D uses an Android USB host/PTP adapter; do not report a connected or captured state without a real camera handshake.
 - Keep PWA image transfer local to the phone/network when implemented; camera images should not be routed through a cloud server by default.
 
 ## Product
 
 - Android companion for Canon EOS 6D control, including USB connectivity.
 - Future PWA bridge for capture requests and returning captured images.
-- The current build provides the app shell and connection guidance; camera control and the local PWA endpoint are not implemented yet.
+- An experimental native Android USB driver is implemented for original EOS 6D discovery, permissions, single-shot JPEG capture and local image download. Physical hardware compatibility is unverified; no installable APK has been built.
+- The PWA endpoint is not implemented yet.
 
 ## User preferences
 
-- The user wants to connect the Android device to the camera via USB; do not scope camera connectivity to Wi-Fi only.
+- USB connectivity is the user's required connection method. Prioritize it over Wi-Fi.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Expo Go/browser previews cannot load the custom Android USB module. Use a native Android build to access USB.
+- Maintain Java sources in `native/android/`; the config plugin copies and registers them during Android prebuild. Generated `android/` is ignored.
+- The camera must have Wi-Fi disabled, a writable SD card, JPEG or RAW+JPEG, and single-shot drive. Keep the companion in the foreground.
+- A failed capture/download may still have taken a photo. Never automatically retry shutter commands or delete camera files.
 
 ## Pointers
 

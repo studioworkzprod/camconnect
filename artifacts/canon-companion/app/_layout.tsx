@@ -13,6 +13,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { UsbCameraProvider } from '@/contexts/UsbCameraContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -49,7 +50,9 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView>
             <KeyboardProvider>
-              <RootLayoutNav />
+              <UsbCameraProvider>
+                <RootLayoutNav />
+              </UsbCameraProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

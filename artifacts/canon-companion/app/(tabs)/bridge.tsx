@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
+import { useUsbCamera } from '@/contexts/UsbCameraContext';
 
 const flow = [
   {
@@ -20,7 +21,7 @@ const flow = [
   {
     number: '02',
     title: 'Android triggers the EOS 6D',
-    detail: 'The phone sends the shutter command over the camera Wi-Fi link.',
+    detail: 'The phone sends the shutter command over its USB OTG connection.',
     icon: 'camera' as const,
   },
   {
@@ -33,6 +34,7 @@ const flow = [
 
 export default function BridgeScreen() {
   const colors = useColors();
+  const camera = useUsbCamera();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
 
@@ -71,7 +73,7 @@ export default function BridgeScreen() {
                 Bridge is not running
               </Text>
               <Text style={[styles.statusSubtitle, { color: colors.mutedForeground }]}>
-                The phone has no active camera connection.
+                {camera.device ? 'USB camera connected. PWA service is not implemented yet.' : 'Connect the camera by USB. PWA service is not implemented yet.'}
               </Text>
             </View>
             <View style={[styles.inactiveBadge, { backgroundColor: colors.secondary }]}>
@@ -133,19 +135,21 @@ export default function BridgeScreen() {
           <Feather name="tool" size={17} color={colors.primary} />
           <View style={styles.roadmapCopy}>
             <Text style={[styles.roadmapTitle, { color: colors.foreground }]}>
-              Connection layer in progress
+              USB driver added · PWA bridge still pending
             </Text>
             <Text style={[styles.roadmapDetail, { color: colors.mutedForeground }]}>
-              The EOS 6D needs its EOS remote-control Wi-Fi protocol. Until that
-              Android link is implemented and tested, no local endpoint or
-              capture requests are exposed.
+              The Android USB driver can request camera access, trigger a
+              single shot and download the JPEG. It still needs physical
+              hardware validation. No PWA endpoint or capture requests are
+              exposed in this build.
             </Text>
           </View>
         </View>
 
         <Text style={[styles.footerNote, { color: colors.mutedForeground }]}>
           The bridge is intended for apps on the same local network. Your images
-          should travel directly from camera to phone to PWA.
+          should travel from camera to phone over USB, then to your PWA without
+          an automatic cloud upload.
         </Text>
       </ScrollView>
     </View>

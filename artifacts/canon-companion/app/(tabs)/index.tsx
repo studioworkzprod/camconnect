@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
-  Linking,
+  ActivityIndicator,
   Modal,
   Platform,
   Pressable,
@@ -13,14 +13,17 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@/hooks/useColors';
+import { Image } from 'expo-image';
+import { useUsbCamera } from '@/contexts/UsbCameraContext';
 
 function StatusPill() {
   const colors = useColors();
+  const camera = useUsbCamera();
   return (
     <View style={[styles.statusPill, { backgroundColor: colors.accent }]}>
       <View style={[styles.statusDot, { backgroundColor: colors.primary }]} />
       <Text style={[styles.statusPillText, { color: colors.foreground }]}>
-        SETUP REQUIRED
+        {!camera.available ? 'NATIVE BUILD NEEDED' : camera.state === 'connected' ? 'USB CONNECTED' : camera.busy ? 'USB BUSY' : 'USB OFFLINE'}
       </Text>
     </View>
   );
@@ -34,15 +37,6 @@ function SetupSheet({
   onClose: () => void;
 }) {
   const colors = useColors();
-
-  async function openWifiSettings() {
-    if (Platform.OS !== 'android') return;
-    try {
-      await Linking.sendIntent('android.settings.WIFI_SETTINGS');
-    } catch {
-      await Linking.openSettings();
-    }
-  }
 
   return (
     <Modal
@@ -78,8 +72,8 @@ function SetupSheet({
           </View>
 
           <Text style={[styles.sheetDescription, { color: colors.mutedForeground }]}>
-            Put the camera in its wireless remote-control mode, then join the
-            camera network from Android.
+            Use an Android device with USB host / OTG support and a USB data cable
+            for the original Canon EOS 6D. No camera Wi-Fi connection is needed.
           </Text>
 
           <View style={styles.steps}>
@@ -94,8 +88,8 @@ function SetupSheet({
                   On the camera
                 </Text>
                 <Text style={[styles.stepBody, { color: colors.mutedForeground }]}>
-                  Open the EOS 6D Wi-Fi function and choose the EOS Utility /
-                  remote-control connection.
+                  Turn Wi-Fi off on the 6D. Insert a writable SD card, choose JPEG
+                  or RAW+JPEG and single-shot drive mode, then turn the camera on.
                 </Text>
               </View>
             </View>
@@ -110,8 +104,9 @@ function SetupSheet({
                   On this device
                 </Text>
                 <Text style={[styles.stepBody, { color: colors.mutedForeground }]}>
-                  Join the Wi-Fi network shown by the camera. Android may warn
-                  that it has no internet access; stay connected.
+                  Connect an OTG adapter to Android and a data-capable Mini-USB
+                  cable to the 6D’s digital terminal. Scan, select the camera,
+                  and allow the Android USB access prompt.
                 </Text>
               </View>
             </View>
@@ -120,33 +115,18 @@ function SetupSheet({
           <View style={[styles.protocolNote, { borderColor: colors.border }]}>
             <Feather name="info" size={17} color={colors.primary} />
             <Text style={[styles.protocolNoteText, { color: colors.mutedForeground }]}>
-              Direct 6D control uses Canon’s older EOS remote protocol. This
-              preview does not yet connect to or trigger the camera.
+              Keep the app in the foreground. USB control requires a native
+              Android build containing this app’s USB module; browsers and Expo
+              Go cannot access it. Hardware compatibility is not yet verified.
             </Text>
           </View>
 
-          {Platform.OS === 'android' ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={openWifiSettings}
-              style={({ pressed }) => [
-                styles.primaryButton,
-                { backgroundColor: colors.primary, opacity: pressed ? 0.82 : 1 },
-              ]}
-              testID="open-wifi-settings"
-            >
-              <Feather name="wifi" size={18} color={colors.primaryForeground} />
-              <Text style={[styles.primaryButtonText, { color: colors.primaryForeground }]}>
-                Open Wi-Fi settings
-              </Text>
-            </Pressable>
-          ) : (
-            <View style={[styles.platformNotice, { backgroundColor: colors.accent }]}>
-              <Text style={[styles.platformNoticeText, { color: colors.mutedForeground }]}>
-                Wi-Fi setup is available on your Android device.
-              </Text>
-            </View>
-          )}
+          <View style={[styles.platformNotice, { backgroundColor: colors.accent }]}>
+            <Text style={[styles.platformNoticeText, { color: colors.mutedForeground }]}>
+              Close other camera-control apps before connecting. Camera photos
+              stay on the SD card; downloaded JPEGs are saved privately on Android.
+            </Text>
+          </View>
           <Pressable
             accessibilityRole="button"
             onPress={onClose}
@@ -165,6 +145,7 @@ function SetupSheet({
 
 export default function CameraScreen() {
   const colors = useColors();
+  const camera = useUsbCamera();
   const insets = useSafeAreaInsets();
   const [setupVisible, setSetupVisible] = useState(false);
   const topInset = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
@@ -206,7 +187,7 @@ export default function CameraScreen() {
           Canon EOS 6D
         </Text>
         <Text style={[styles.modelSubline, { color: colors.mutedForeground }]}>
-          First-generation wireless DSLR
+          USB OTG · Canon PTP · Single-shot JPEG
         </Text>
 
         <View
@@ -218,30 +199,80 @@ export default function CameraScreen() {
           <View style={[styles.cameraGlyphWrap, { backgroundColor: colors.accent }]}>
             <Feather name="camera" size={37} color={colors.mutedForeground} />
             <View style={[styles.offlineBadge, { backgroundColor: colors.card }]}>
-              <View style={[styles.offlineDot, { backgroundColor: colors.destructive }]} />
+              <View style={[styles.offlineDot, { backgroundColor: camera.device ? colors.primary : colors.destructive }]} />
             </View>
           </View>
           <Text style={[styles.connectionTitle, { color: colors.foreground }]}>
-            Camera link is not active
+            {!camera.available ? 'USB needs the Android build' : camera.device ? 'Connected over USB' : camera.busy ? 'Opening USB camera…' : 'Connect your camera by USB'}
           </Text>
           <Text style={[styles.connectionCopy, { color: colors.mutedForeground }]}>
-            Pairing instructions are ready. Direct camera control is still being
-            built and is not available in this preview.
+            {!camera.available
+              ? 'The USB driver is included in the source. This browser / Expo Go preview cannot load native USB code or take photos.'
+              : camera.message}
           </Text>
+          {camera.error ? (
+            <Text accessibilityRole="alert" style={[styles.connectionCopy, { color: colors.destructive }]}>
+              {camera.error}
+            </Text>
+          ) : null}
+          {camera.available ? (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                disabled={camera.busy || camera.scanning}
+                onPress={() => { if (camera.device) void camera.disconnect(); else void camera.scan(); }}
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  { backgroundColor: colors.primary, opacity: camera.busy || camera.scanning ? 0.5 : pressed ? 0.8 : 1 },
+                ]}
+                testID="scan-usb-cameras"
+              >
+                {camera.scanning || camera.busy ? <ActivityIndicator color={colors.primaryForeground} /> : <Feather name={camera.device ? 'power' : 'refresh-cw'} size={18} color={colors.primaryForeground} />}
+                <Text style={[styles.primaryButtonText, { color: colors.primaryForeground }]}>
+                  {camera.device ? 'Disconnect camera' : camera.scanning ? 'Scanning USB…' : 'Scan USB cameras'}
+                </Text>
+              </Pressable>
+              {!camera.device && !camera.scanning && camera.devices.length === 0 ? (
+                <Text style={[styles.connectionCopy, { color: colors.mutedForeground, marginTop: 14, marginBottom: 0 }]}>
+                  No USB camera detected. Check camera power, OTG adapter and data cable.
+                </Text>
+              ) : null}
+              {!camera.device && camera.devices.map((device) => (
+                <Pressable
+                  key={device.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Connect ${device.name}`}
+                  disabled={!device.supported || camera.busy}
+                  onPress={() => void camera.connect(device.id)}
+                  style={[styles.usbDevice, { borderColor: colors.border, opacity: device.supported && !camera.busy ? 1 : 0.5 }]}
+                  testID={`usb-device-${device.id}`}
+                >
+                  <Feather name="camera" size={18} color={colors.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: '600' }}>{device.name}</Text>
+                    <Text style={{ color: colors.mutedForeground, fontSize: 11, marginTop: 4 }}>
+                      {device.supported ? 'Tap to connect · Android permission required' : 'Not supported yet · original EOS 6D only'}
+                    </Text>
+                  </View>
+                  <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+                </Pressable>
+              ))}
+            </>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             onPress={showSetup}
             style={({ pressed }) => [
-              styles.primaryButton,
-              { backgroundColor: colors.primary, opacity: pressed ? 0.82 : 1 },
+              styles.setupLink,
+              { opacity: pressed ? 0.65 : 1 },
             ]}
             testID="setup-camera"
           >
-            <Feather name="settings" size={17} color={colors.primaryForeground} />
-            <Text style={[styles.primaryButtonText, { color: colors.primaryForeground }]}>
-              Camera setup
+            <Feather name="help-circle" size={17} color={colors.primary} />
+            <Text style={[styles.primaryButtonText, { color: colors.primary }]}>
+              USB setup guide
             </Text>
-            <Feather name="arrow-up-right" size={16} color={colors.primaryForeground} />
+            <Feather name="arrow-up-right" size={16} color={colors.primary} />
           </Pressable>
         </View>
 
@@ -250,24 +281,27 @@ export default function CameraScreen() {
             REMOTE SHUTTER
           </Text>
           <Text style={[styles.captureHint, { color: colors.mutedForeground }]}>
-            Connect first
+            {camera.state === 'downloading' ? `${camera.progress}% downloaded` : camera.device ? 'USB' : 'Connect first'}
           </Text>
         </View>
         <View style={styles.shutterArea}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Take a photo. Unavailable until camera control is connected."
-            accessibilityState={{ disabled: true }}
-            disabled
+            accessibilityLabel="Take one photo and download the JPEG"
+            accessibilityState={{ disabled: !camera.device || camera.busy }}
+            disabled={!camera.device || camera.busy}
+            onPress={() => { void Haptics.selectionAsync(); void camera.capture(); }}
             style={[styles.shutterOuter, { borderColor: colors.border }]}
-            testID="take-photo-disabled"
+            testID="take-photo"
           >
-            <View style={[styles.shutterInner, { backgroundColor: colors.secondary }]}>
-              <Feather name="aperture" size={31} color={colors.mutedForeground} />
+            <View style={[styles.shutterInner, { backgroundColor: camera.device && !camera.busy ? colors.primary : colors.secondary }]}>
+              {camera.state === 'capturing' || camera.state === 'downloading'
+                ? <ActivityIndicator color={colors.primary} />
+                : <Feather name="aperture" size={31} color={camera.device && !camera.busy ? colors.primaryForeground : colors.mutedForeground} />}
             </View>
           </Pressable>
           <Text style={[styles.shutterLabel, { color: colors.mutedForeground }]}>
-            SHUTTER UNAVAILABLE
+            {camera.state === 'capturing' ? 'TAKING PHOTO…' : camera.state === 'downloading' ? `DOWNLOADING ${camera.progress}%` : camera.device ? 'TAKE A PHOTO' : 'SHUTTER UNAVAILABLE'}
           </Text>
         </View>
 
@@ -277,7 +311,15 @@ export default function CameraScreen() {
           </Text>
           <Feather name="image" size={17} color={colors.mutedForeground} />
         </View>
-        <View
+        {camera.lastCapture ? (
+          <View style={[styles.savedCapture, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <Image source={{ uri: camera.lastCapture.uri }} style={styles.captureImage} contentFit="contain" accessibilityLabel="Last JPEG downloaded from the Canon EOS 6D" />
+            <Text numberOfLines={1} style={[styles.captureFilename, { color: colors.foreground }]}>{camera.lastCapture.name}</Text>
+            <Text style={[styles.captureFileDetail, { color: colors.mutedForeground }]}>
+              {(camera.lastCapture.bytes / 1024 / 1024).toFixed(1)} MB · {new Date(camera.lastCapture.createdAt).toLocaleString()} · Saved on device
+            </Text>
+          </View>
+        ) : <View
           style={[
             styles.emptyCapture,
             { borderColor: colors.border, backgroundColor: colors.card },
@@ -285,9 +327,9 @@ export default function CameraScreen() {
         >
           <Feather name="image" size={20} color={colors.mutedForeground} />
           <Text style={[styles.emptyCaptureText, { color: colors.mutedForeground }]}>
-            Captured images will appear here after the camera link is available.
+            No captured images yet. Downloaded JPEGs will appear here.
           </Text>
-        </View>
+        </View>}
       </ScrollView>
       <SetupSheet visible={setupVisible} onClose={() => setSetupVisible(false)} />
     </View>
@@ -295,6 +337,12 @@ export default function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
+  setupLink: { minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 10, width: '100%', paddingHorizontal: 4, marginTop: 10 },
+  usbDevice: { width: '100%', flexDirection: 'row', gap: 10, alignItems: 'center', borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 12 },
+  savedCapture: { borderWidth: 1, borderRadius: 14, overflow: 'hidden', paddingBottom: 14 },
+  captureImage: { width: '100%', height: 215 },
+  captureFilename: { fontSize: 12, paddingHorizontal: 14, marginTop: 12 },
+  captureFileDetail: { fontSize: 10, paddingHorizontal: 14, marginTop: 6 },
   screen: { flex: 1 },
   content: { paddingHorizontal: 22, paddingBottom: 110 },
   topline: {
