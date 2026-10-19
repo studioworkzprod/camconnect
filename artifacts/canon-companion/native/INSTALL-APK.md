@@ -3,8 +3,8 @@
 This APK is for testing the experimental Canon EOS 6D USB driver. A successful
 build does not establish compatibility with your phone and camera.
 
-**Build status:** No APK has been produced yet; local packaging was blocked by a
-storage quota. These instructions apply once the test APK has been built.
+Only install the APK from a successful build. Check its accompanying SHA-256
+checksum if you transfer it between devices.
 
 ## Installation
 

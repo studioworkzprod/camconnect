@@ -1,1 +1,2 @@
 - [Android build storage quota](android-build-storage.md) — available space from df does not rule out EDQUOT; Java's performance sampler can crash when a quota is reached.
+- [GitHub access layers](github-access-layers.md) — account authorization, CLI authentication and repository attachment are separate; do not loop contradictory setup prompts.

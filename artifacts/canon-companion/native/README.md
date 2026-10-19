@@ -84,6 +84,32 @@ report did not reveal that limit. Its temporary SDK and Gradle caches were
 removed afterward. Use a build machine with enough space for the SDK, native
 toolchain, downloaded dependencies and compilation intermediates.
 
+### GitHub Actions cloud build
+
+The repository includes `.github/workflows/android-usb-apk.yml`. It is manually
+triggered so syncing code does not silently start additional builds.
+
+1. Push the project, including its workspace packages and lockfile, to a GitHub
+   repository. A private repository is appropriate; no public release is needed.
+2. Open **Actions → Build Android USB test APK → Run workflow**. The workflow
+   must be present on the repository's default branch to appear in this menu.
+3. Wait for a successful run. Download the **canon-companion-usb-test** artifact
+   from the run's summary. GitHub repository access is required to download it.
+4. Extract the ZIP. It contains the APK, its SHA-256 checksum, build information
+   and installation instructions. Install the APK, not the ZIP.
+
+The workflow installs the mobile workspace with the frozen lockfile, runs
+TypeScript/protocol/packaging checks, builds a bundled APK, and checks the actual
+Android signature, manifest, native USB classes, ARM libraries and JavaScript
+bundle before uploading it. Download artifacts are retained for 14 days.
+No Expo login, EAS CLI, camera images, Replit secrets or production signing key
+are required. The workflow's built-in GitHub token has read-only repository
+permissions. Third-party actions are pinned to verified commit hashes.
+
+The workflow has not yet completed a cloud build. Its presence in the project
+is not proof that an APK is available. A real camera/phone test remains required
+even after CI succeeds. GitHub-hosted runner availability and usage limits apply.
+
 ## Verification
 
 With a JDK on PATH, from the mobile package:

@@ -1,0 +1,102 @@
+name: Build Android USB test APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-usb-apk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    name: Canon 6D USB test APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      ANDROID_ABIS: arm64-v8a,armeabi-v7a
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          version: 10.26.1
+          run_install: false
+          cache: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+          package-manager-cache: false
+
+      - name: Set up Java
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: |
+            17
+            21
+
+      - name: Install mobile workspace dependencies
+        run: pnpm install --frozen-lockfile --filter '@workspace/canon-companion...'
+
+      - name: Check TypeScript and USB protocol
+        run: |
+          pnpm --filter @workspace/canon-companion run typecheck
+          pnpm --filter @workspace/canon-companion run test:usb:protocol
+          python3 -m unittest discover -s artifacts/canon-companion/tests -p 'test_apk_verification.py'
+
+      - name: Install Android build tools
+        shell: bash
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:?Android SDK is missing from the runner}}"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          set +o pipefail
+          yes | sdkmanager --sdk_root="$SDK" --licenses > /dev/null
+          set -o pipefail
+          sdkmanager --sdk_root="$SDK" --install \
+            'platforms;android-36' \
+            'build-tools;36.0.0' \
+            'build-tools;35.0.0' \
+            'ndk;27.1.12297006' \
+            'cmake;3.22.1' \
+            'cmake;3.31.6'
+          df -h "$SDK" "$GITHUB_WORKSPACE"
+
+      - name: Build bundled, development-signed APK
+        run: pnpm --filter @workspace/canon-companion run build:apk --console=plain
+
+      - name: Verify APK and write checksum
+        run: python3 artifacts/canon-companion/scripts/verify-android-apk.py
+
+      - name: Upload APK, checksum and installation instructions
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: canon-companion-usb-test
+          path: generated-artifacts/apk/
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Show download link
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          {
+            echo '## Android USB test APK'
+            printf '[Download the APK bundle](%s)\n\n' "$ARTIFACT_URL"
+            echo 'Extract the download ZIP and install canon-companion-usb-test.apk.'
+            echo 'This is development-signed for sideload testing, not a Play Store release.'
+            echo 'A physical Android + Canon EOS 6D USB test is still required.'
+            echo 'PWA triggering and image return are not implemented in this build.'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -11,6 +11,7 @@ An Android companion app for Canon EOS 6D USB capture, with a future bridge to p
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/canon-companion run test:usb:protocol` — Java USB framing/driver tests (requires a JDK on PATH)
 - `pnpm --filter @workspace/canon-companion run build:apk` — self-contained, development-signed Android test APK (requires Android SDK/JDK and sufficient build storage)
+- `.github/workflows/android-usb-apk.yml` — manually triggered GitHub cloud build; publishes a private downloadable build artifact, not a public/store release
 - Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
