@@ -1,6 +1,6 @@
-# [Project name]
+# Canon DSLR Companion
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An Android companion app intended to connect to a Canon EOS 6D, trigger captures, and pass images to nearby PWAs.
 
 ## Run & Operate
 
@@ -22,15 +22,20 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/canon-companion` — Expo Android companion app.
+- `artifacts/api-server` — shared API server; no server-side functionality is required for the initial device-focused app.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Keep camera transports model-specific so future camera bodies can be added without changing the PWA-facing contract.
+- The EOS 6D is a legacy Wi-Fi remote-control target; do not report a connected or captured state without a real camera transport.
+- Keep PWA image transfer local to the phone/network when implemented; camera images should not be routed through a cloud server by default.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Android companion for Canon EOS 6D wireless control.
+- Future PWA bridge for capture requests and returning captured images.
+- The current build provides the app shell and connection guidance; camera control and the local PWA endpoint are not implemented yet.
 
 ## User preferences
 

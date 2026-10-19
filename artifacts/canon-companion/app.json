@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Canon DSLR Companion",
+    "slug": "canon-companion",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "canon-companion",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#151614"
+    },
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#151614"
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
